@@ -25,6 +25,8 @@ known_issues = {}
 # Easy args support
 parser = argparse.ArgumentParser(description='Process some args')
 parser.add_argument('--log_file', action='store_true', help="log to %s instead of stdout" % log_file)
+parser.add_argument('--full', action='store_true', help="Download all issues. Existing files will be redownladed with new name.")
+parser.add_argument('--force', action='store_true', help = "Force overwrite existing issues. Includes '--full'.")
 parser.add_argument('--debug', action='store_true')
 args = parser.parse_args()
 
@@ -71,7 +73,7 @@ for issue in issues:
   if args.debug:
     print("  Found %s: %s" % (title, download_link))
 
-  if title not in known_issues.keys():
+  if title not in known_issues.keys() or args.force or args.full:
     known_issues[title] = download_link
     filename = download_link.split('/')[-1]
     filepath = dropbox_path + "/" + filename
@@ -87,6 +89,10 @@ for issue in issues:
     # ----
 
     print("    Asking Dropbox to fetch %s to %s" % (download_link, filepath))
+    if args.full:
+      fdl = dbx.files.WriteMode('add', None)
+    elif args.force:
+      fdl = dbx.files.WriteMode('overwrite', None)
     res = dbx.files_save_url(filepath, download_link)
     print("      JobID: " + res.get_async_job_id())
     if args.debug:
